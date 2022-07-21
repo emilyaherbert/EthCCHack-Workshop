@@ -176,6 +176,7 @@ pub(crate) async fn pledge(
 pub(crate) async fn complete_campaign(fundraiser_handle: &Fundraiser, campaign_id: u64) {
     fundraiser_handle
         .complete_campaign(campaign_id)
+        .append_variable_outputs(1)
         .call()
         .await
         .unwrap();
