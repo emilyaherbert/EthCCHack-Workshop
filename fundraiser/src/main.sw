@@ -15,6 +15,7 @@ use std::{
     result::*,
     context::{call_frames::msg_asset_id, msg_amount, this_balance},
     token::transfer,
+    revert::revert,
 };
 
 storage {
@@ -27,7 +28,7 @@ storage {
     },
 
     // the current total number of campaigns
-    next_campaign_number: u64 = 0,
+    next_campaign_id: u64 = 0,
 
     // all of the campaigns
     campaigns: StorageMap<u64, Campaign> = StorageMap {},
@@ -44,10 +45,10 @@ impl Fundraiser for Contract {
 
     // get the campaign with the given campaign number
     #[storage(read)]
-    fn get_campaign(campaign_number: u64) -> Campaign {
+    fn get_campaign(campaign_id: u64) -> Campaign {
         require(storage.state == State::Initialized, CreationError::ContractNotInitialized);
-        require(campaign_number < storage.next_campaign_number, UserError::InvalidId);
-        storage.campaigns.get(campaign_number)
+        require(campaign_id < storage.next_campaign_id, UserError::InvalidId);
+        storage.campaigns.get(campaign_id)
     }
 
     // create a new campaign
@@ -63,56 +64,58 @@ impl Fundraiser for Contract {
             current_amount: 0,
             is_active: true
         };
-        let campaign_number = storage.next_campaign_number;
-        storage.campaigns.insert(campaign_number, campaign);
-        storage.next_campaign_number += 1;
-        campaign_number
+        let campaign_id = storage.next_campaign_id;
+        storage.campaigns.insert(campaign_id, campaign);
+        storage.next_campaign_id += 1;
+        campaign_id
     }
 
     // cancel a campaign
     #[storage(read, write)]
-    fn cancel_campaign(campaign_number: u64) {
+    fn cancel_campaign(campaign_id: u64) {
         require(storage.state == State::Initialized, CreationError::ContractNotInitialized);
-        require(campaign_number < storage.next_campaign_number, UserError::InvalidId);
+        require(campaign_id < storage.next_campaign_id, UserError::InvalidId);
 
-        let mut campaign = storage.campaigns.get(campaign_number);
+        let mut campaign = storage.campaigns.get(campaign_id);
         let user = msg_sender().unwrap();
 
         require(campaign.author == user, UserError::UnauthorizedUser);
 
         campaign.is_active = false;
-        storage.campaigns.insert(campaign_number, campaign);
+        storage.campaigns.insert(campaign_id, campaign);
     }
 
     // pledge an amount to a campaign
     #[storage(read, write)]
-    fn pledge(campaign_number: u64) {
+    fn pledge(campaign_id: u64) {
         require(storage.state == State::Initialized, CreationError::ContractNotInitialized);
-        require(campaign_number < storage.next_campaign_number, UserError::InvalidId);
+        require(campaign_id < storage.next_campaign_id, UserError::InvalidId);
         require(storage.asset == msg_asset_id(), UserError::IncorrectAssetSent);
 
-        let mut campaign = storage.campaigns.get(campaign_number);
+        let mut campaign = storage.campaigns.get(campaign_id);
         let pledge_amount = msg_amount();
 
         require(campaign.is_active, CampaignError::CampaignNoLongerActive);
         require(pledge_amount > 0, UserError::AmountCannotBeZero);
 
         campaign.current_amount += pledge_amount;
+        storage.campaigns.insert(campaign_id, campaign);
     }
 
     // completes a campaign and sends the total amount pledged to the campaign beneficiary
     #[storage(read, write)]
-    fn complete_compaign(campaign_number: u64) {
+    fn complete_campaign(campaign_id: u64) {
         require(storage.state == State::Initialized, CreationError::ContractNotInitialized);
-        require(campaign_number < storage.next_campaign_number, UserError::InvalidId);
+        require(campaign_id < storage.next_campaign_id, UserError::InvalidId);
 
-        let mut campaign = storage.campaigns.get(campaign_number);
+        let mut campaign = storage.campaigns.get(campaign_id);
+        let user = msg_sender().unwrap();
 
         require(campaign.is_active, CampaignError::CampaignNoLongerActive);
         require(campaign.current_amount >= campaign.goal_amount, CampaignError::TargetNotReached);
 
         campaign.is_active = false;
-        storage.campaigns.insert(campaign_number, campaign);
+        storage.campaigns.insert(campaign_id, campaign);
 
         // Transfer the total pledged to this campaign to the beneficiary
         transfer(campaign.current_amount, storage.asset, campaign.beneficiary);

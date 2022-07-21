@@ -12,19 +12,19 @@ abi Fundraiser {
     fn initialize(token: ContractId);
 
     #[storage(read)]
-    fn get_campaign(campaign_number: u64) -> Campaign;
+    fn get_campaign(campaign_id: u64) -> Campaign;
 
     #[storage(read, write)]
     fn create_campaign(beneficiary: Identity, goal_amount: u64) -> u64;
 
     #[storage(read, write)]
-    fn cancel_campaign(campaign_number: u64);
+    fn cancel_campaign(campaign_id: u64);
 
     #[storage(read, write)]
-    fn pledge(campaign_number: u64);
+    fn pledge(campaign_id: u64);
 
     #[storage(read, write)]
-    fn complete_compaign(campaign_number: u64);
+    fn complete_campaign(campaign_id: u64);
 }
 
 pub enum State {

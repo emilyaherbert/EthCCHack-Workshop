@@ -9,6 +9,7 @@ abigen!(Asset, "../asset/out/debug/asset-abi.json");
 pub(crate) struct User {
     pub(crate) fundraiser_handle: Fundraiser,
     pub(crate) wallet: LocalWallet,
+    pub(crate) identity: Identity,
 }
 
 pub(crate) async fn setup_tests() -> (ContractId, Asset, [User; 4]) {
@@ -51,20 +52,36 @@ pub(crate) async fn setup_tests() -> (ContractId, Asset, [User; 4]) {
     .unwrap();
 
     let deployer = User {
-        fundraiser_handle: Fundraiser::new(fundraiser_contract_id.to_string(), deployer_wallet.clone()),
-        wallet: deployer_wallet,
+        fundraiser_handle: Fundraiser::new(
+            fundraiser_contract_id.to_string(),
+            deployer_wallet.clone(),
+        ),
+        wallet: deployer_wallet.clone(),
+        identity: Identity::Address(deployer_wallet.address())
     };
     let user_1 = User {
-        fundraiser_handle: Fundraiser::new(fundraiser_contract_id.to_string(), user_1_wallet.clone()),
-        wallet: user_1_wallet,
+        fundraiser_handle: Fundraiser::new(
+            fundraiser_contract_id.to_string(),
+            user_1_wallet.clone(),
+        ),
+        wallet: user_1_wallet.clone(),
+        identity: Identity::Address(user_1_wallet.address())
     };
     let user_2 = User {
-        fundraiser_handle: Fundraiser::new(fundraiser_contract_id.to_string(), user_2_wallet.clone()),
-        wallet: user_2_wallet,
+        fundraiser_handle: Fundraiser::new(
+            fundraiser_contract_id.to_string(),
+            user_2_wallet.clone(),
+        ),
+        wallet: user_2_wallet.clone(),
+        identity: Identity::Address(user_2_wallet.address()),
     };
     let user_3 = User {
-        fundraiser_handle: Fundraiser::new(fundraiser_contract_id.to_string(), user_3_wallet.clone()),
-        wallet: user_3_wallet,
+        fundraiser_handle: Fundraiser::new(
+            fundraiser_contract_id.to_string(),
+            user_3_wallet.clone(),
+        ),
+        wallet: user_3_wallet.clone(),
+        identity: Identity::Address(user_3_wallet.address())
     };
 
     (
@@ -74,12 +91,12 @@ pub(crate) async fn setup_tests() -> (ContractId, Asset, [User; 4]) {
     )
 }
 
-pub(crate) async fn get_token_balance_in_wallet(
-    token_contract_id: ContractId,
+pub(crate) async fn get_asset_balance_in_wallet(
+    asset_contract_id: ContractId,
     wallet: LocalWallet,
 ) -> Option<u64> {
     let mut x_string = "0x".to_string();
-    x_string.push_str(&token_contract_id.to_string());
+    x_string.push_str(&asset_contract_id.to_string());
     let balances = wallet.get_balances().await.unwrap();
     balances.get(&x_string).cloned()
 }
@@ -95,4 +112,81 @@ pub(crate) async fn mint_and_send_to_address(
         .call()
         .await
         .unwrap();
+}
+
+pub(crate) async fn initialize_fundraiser_contract(
+    asset_contract_id: ContractId,
+    fundraiser_handle: &Fundraiser,
+) {
+    fundraiser_handle
+        .initialize(asset_contract_id)
+        .call()
+        .await
+        .unwrap();
+}
+
+pub(crate) async fn create_campaign(
+    fundraiser_handle: &Fundraiser,
+    beneficiary: &Identity,
+    goal_amount: u64,
+) -> u64 {
+    fundraiser_handle
+        .create_campaign(beneficiary.clone(), goal_amount)
+        .append_variable_outputs(1)
+        .call()
+        .await
+        .unwrap()
+        .value
+}
+
+pub(crate) async fn cancel_campaign(fundraiser_handle: &Fundraiser, campaign_id: u64) {
+    fundraiser_handle
+        .cancel_campaign(campaign_id)
+        .call()
+        .await
+        .unwrap();
+}
+
+pub(crate) async fn pledge(
+    fundraiser_handle: &Fundraiser,
+    asset_contract_id: ContractId,
+    campaign_id: u64,
+    pledge_amount: u64,
+) {
+    let tx_params = TxParameters::new(
+        None,             // gas price
+        Some(10_000_000), // gas limit
+        None,             // byte price
+        None,             // maturity
+    );
+    let call_params = CallParameters::new(
+        Some(pledge_amount),                     // amount
+        Some(AssetId::from(*asset_contract_id)), // asset ID
+        Some(1_000_000),                         // gas forwarded
+    );
+    fundraiser_handle
+        .pledge(campaign_id)
+        .tx_params(tx_params)
+        .call_params(call_params)
+        .call()
+        .await
+        .unwrap();
+}
+
+pub(crate) async fn complete_campaign(fundraiser_handle: &Fundraiser, campaign_id: u64) {
+    fundraiser_handle
+        .complete_campaign(campaign_id)
+        .call()
+        .await
+        .unwrap();
+}
+
+pub(crate) async fn get_campaign(fundraiser_handle: &Fundraiser, campaign_id: u64) -> Campaign {
+    fundraiser_handle
+        .get_campaign(campaign_id)
+        .append_variable_outputs(1)
+        .call()
+        .await
+        .unwrap()
+        .value
 }
