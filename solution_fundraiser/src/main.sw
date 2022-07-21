@@ -109,7 +109,6 @@ impl Fundraiser for Contract {
         require(campaign_id < storage.next_campaign_id, UserError::InvalidId);
 
         let mut campaign = storage.campaigns.get(campaign_id);
-        let user = msg_sender().unwrap();
 
         require(campaign.is_active, CampaignError::CampaignNoLongerActive);
         require(campaign.current_amount >= campaign.goal_amount, CampaignError::TargetNotReached);
