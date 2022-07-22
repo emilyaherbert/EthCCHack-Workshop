@@ -122,9 +122,6 @@ impl Fundraiser for Contract {
         3. set the campaign is_active field to false
         4. re-insert the campaign into storage.campaigns
 
-        function signature for the "transfer" function:
-        fn transfer(amount: u64, asset_id: ContractId, to: Identity)
-
         NOTE:
 
         1. consider the case in which the campaign_id is less than storage.next_campaign_id. use a
@@ -150,9 +147,6 @@ impl Fundraiser for Contract {
             so you will need to call "msg_amount().unwrap()"
         3. increase the current_amount on the campaign by the pledge amount from step (2)
         4. re-insert the campaign into storage.campaigns
-
-        function signature for the "transfer" function:
-        fn transfer(amount: u64, asset_id: ContractId, to: Identity)
 
         NOTE:
 
