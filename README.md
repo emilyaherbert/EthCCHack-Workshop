@@ -9,9 +9,8 @@ We are writing a smart contract for a group of people who love numbers! They wan
 2. [Get set up](#getting-started)
 3. [Set up your editor](#editor)
 4. [Check out the Sway primer](PRIMER.md) (optional, but recommended)
-5. [Build the Token contract](token/README.md)
-6. [Build the Voting contract](voting/README.md)
-7. [Expand the scope of the demo and keep working](#extensions-😊) (optional!)
+5. [Build the Asset contract](asset/README.md)
+6. [Build the Fundraiser contract](fundraiser/README.md)
 
 ## Getting Started
 
@@ -55,12 +54,3 @@ You are welcome to use your editor of choice.
 
 - [VSCode plugin](https://marketplace.visualstudio.com/items?itemName=FuelLabs.sway-vscode-plugin)
 - [Vim highlighting](https://github.com/FuelLabs/sway.vim)
-
-## Extensions 😊
-
-Here is a little list of ideas of how you might expand this example.
-
-1. Add an additional function to the ABI that allows users to unlock votes and put them back into their balance
-2. Give a reward to the users who voted for the winning number
-3. Change the Voting contract so that it accepts proposals for new favorite numbers, rather than using [0, 99)
-4. Expand the scope of what the group votes on---it could be something other than a favorite number
